@@ -1,74 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:zap_talk/src/auth/login.dart';
+import 'package:zap_talk/services/post_service.dart';
 import 'package:zap_talk/src/pages/perfil.dart';
-import 'package:zap_talk/src/widget/navbar.dart';
+import 'package:zap_talk/src/widget/formPost.dart';
 
-class FirstPage extends StatefulWidget {
-  const FirstPage({Key? key}) : super(key: key);
+class Firstpages extends StatefulWidget {
+  const Firstpages({Key? key}) : super(key: key);
 
   @override
-  State<FirstPage> createState() => _FirstPageState();
+  _FirstpagesState createState() => _FirstpagesState();
 }
 
-class _FirstPageState extends State<FirstPage> {
-  final TextEditingController _postController = TextEditingController();
-
-  @override
-  void dispose() {
-    _postController.dispose();
-    super.dispose();
-  }
+class _FirstpagesState extends State<Firstpages> {
+  final PostService _postService = PostService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const Navbar(),
       appBar: AppBar(
-        title: const Text('Welcome'),
-        backgroundColor: Colors.white,
+        title: const Text('ZapTalk'),
+        backgroundColor: const Color.fromARGB(0, 255, 153, 0), // Color de fondo del appbar
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color.fromARGB(150, 155, 39, 176),
-              const Color.fromARGB(150, 244, 67, 54),
-              const Color.fromARGB(150, 255, 153, 0),
-              const Color.fromARGB(150, 255, 235, 59),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildPostCard(), // Tarjeta para postear
-                _buildUserPost(
-                  avatarUrl: 'images/cereza.jpeg',
-                  username: 'UsuarioEjemplo',
-                  content: 'Este es un ejemplo de cómo se vería una publicación de texto.',
-                ),
-                _buildUserPost(
-                  avatarUrl: 'images/descarga.jpeg',
-                  username: 'UsuarioEjemplo',
-                  content: 'Tu sonrisa me reconforta e ilumina mis días grises.',
-                  imageUrl: 'images/cereza.jpeg',
-                ),
-                _buildInfoCard(
-                  title: 'Descripción de ZapTalk',
-                  content:
-                      'ZapTalk es una plataforma de redes sociales donde puedes conectarte con amigos, familiares y personas de todo el mundo.',
-                ),
-                _buildInfoCard(
-                  title: 'Funcionalidades principales',
-                  content:
-                      'Aquí puedes compartir tus pensamientos, ideas y momentos especiales con la comunidad. Publica tus posts, interactúa con otras publicaciones y mantente al día con las últimas tendencias.',
-                ),
-              ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Publicaciones',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-          ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: StreamBuilder<List<Map<String, dynamic>>>(
+                stream: _postService.streamPosts(), // Obtener el stream de posts
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text('No hay publicaciones.'));
+                  }
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      return _buildPostCard(snapshot.data![index]);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -79,30 +65,25 @@ class _FirstPageState extends State<FirstPage> {
             IconButton(
               icon: Icon(Icons.home),
               onPressed: () {
-                Navigator.push(
+                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const FirstPage()),
+                  MaterialPageRoute(builder: (context) => Firstpages()),
                 );
               },
             ),
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () {},
-            ),
+           
             IconButton(
               icon: Icon(Icons.add_box),
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: Icon(Icons.favorite),
-              onPressed: () {},
+              onPressed: () {
+                _showCreatePostModal(context);
+              },
             ),
             IconButton(
               icon: Icon(Icons.account_circle),
               onPressed: () {
-                Navigator.push(
+                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                  MaterialPageRoute(builder: (context) => ProfilePage()),
                 );
               },
             ),
@@ -110,122 +91,65 @@ class _FirstPageState extends State<FirstPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          _showCreatePostModal(context);
+        },
         child: Icon(Icons.add),
-        backgroundColor: Color.fromARGB(55, 23, 3, 78),
+        backgroundColor: Color.fromARGB(255, 90, 51, 197),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  Widget _buildPostCard() {
+  Widget _buildPostCard(Map<String, dynamic> postData) {
     return Card(
-      margin: EdgeInsets.all(16.0),
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       child: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _postController,
-              decoration: InputDecoration(
-                hintText: '¿Qué está pasando?',
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.5),
-                border: InputBorder.none,
-              ),
-              maxLines: null,
-            ),
-            SizedBox(height: 10.0),
-            ElevatedButton(
-              onPressed: () {
-                // Acción para publicar el post
-                print(_postController.text);
-              },
-              child: Text('Publicar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color.fromARGB(255, 90, 51, 197),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard({required String title, required String content}) {
-    return Card(
-      margin: EdgeInsets.all(16.0),
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              title,
-              style: TextStyle(
-                fontSize: 24.0,
-                fontWeight: FontWeight.bold,
-              ),
+              postData['text'],
+              style: const TextStyle(fontSize: 16.0),
             ),
-            SizedBox(height: 10.0),
-            Text(
-              content,
-              style: TextStyle(
-                fontSize: 16.0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUserPost({
-    required String avatarUrl,
-    required String username,
-    required String content,
-    String? imageUrl,
-  }) {
-    return Card(
-      margin: EdgeInsets.all(16.0),
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+            const SizedBox(height: 10.0),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CircleAvatar(
-                  backgroundImage: AssetImage(avatarUrl),
-                ),
-                SizedBox(width: 10.0),
                 Text(
-                  username,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.0,
-                  ),
+                  'Fecha: ${_formatTimestamp(postData['createdAt'])}',
+                  style: TextStyle(color: Colors.grey),
                 ),
               ],
             ),
-            SizedBox(height: 10.0),
-            Text(
-              content,
-              style: TextStyle(
-                fontSize: 16.0,
-              ),
-            ),
-            if (imageUrl != null) ...[
-              SizedBox(height: 10.0),
-              Image.asset(
-                imageUrl,
-                fit: BoxFit.cover,
-              ),
-            ],
           ],
         ),
       ),
+    );
+  }
+
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      DateTime dateTime = timestamp.toDate();
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+    return 'Fecha desconocida';
+  }
+
+  void _showCreatePostModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return CreatePostModal(
+          onPostCreated: (text) {
+            _postService.addPost(text: text); // Agregar el post
+            Navigator.pop(context); // Cerrar el modal
+          },
+        );
+      },
     );
   }
 }

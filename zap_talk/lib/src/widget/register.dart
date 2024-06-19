@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:zap_talk/services/firebase_service.dart';
 
 class Register extends StatefulWidget {
-  const Register({super.key});
+  const Register({Key? key}) : super(key: key);
 
   @override
-  State<Register> createState() => _RegisterState();
+  _RegisterState createState() => _RegisterState();
 }
 
 class _RegisterState extends State<Register> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _cedulaController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String? _estadoCivil;
-  DateTime? _fechaNacimiento;
-  String? _genero;
+  String? _civilStatus;
+  String? _dateBirth;
+  String? _genders;
 
   @override
   Widget build(BuildContext context) {
@@ -92,12 +94,10 @@ class _RegisterState extends State<Register> {
                       if (value == null || value.isEmpty) {
                         return 'Por favor ingrese su cédula';
                       }
-                      if (!RegExp(r'^\d{10}$').hasMatch(value)) {
-                        return 'La cédula debe tener 10 dígitos';
-                      }
+                      // Aquí puedes agregar validaciones adicionales para el campo de cédula si lo necesitas
                       return null;
                     },
-                    style: const TextStyle(color: Colors.black), // Estilo del texto del input
+                    style: const TextStyle(color: Colors.black),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -118,6 +118,30 @@ class _RegisterState extends State<Register> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor ingrese su nombre';
+                      }
+                      return null;
+                    },
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: gradientBorder,
+                  padding: const EdgeInsets.all(2),
+                  child: TextFormField(
+                    controller: _lastnameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Apellido',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese su apellido';
                       }
                       return null;
                     },
@@ -155,8 +179,36 @@ class _RegisterState extends State<Register> {
                 Container(
                   decoration: gradientBorder,
                   padding: const EdgeInsets.all(2),
+                  child: TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Contraseña',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese su contraseña';
+                      }
+                      if (value.length < 6) {
+                        return 'La contraseña debe tener al menos 6 caracteres';
+                      }
+                      return null;
+                    },
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: gradientBorder,
+                  padding: const EdgeInsets.all(2),
                   child: DropdownButtonFormField<String>(
-                    value: _estadoCivil,
+                    value: _civilStatus,
                     decoration: const InputDecoration(
                       labelText: 'Estado Civil',
                       border: OutlineInputBorder(
@@ -166,7 +218,7 @@ class _RegisterState extends State<Register> {
                       filled: true,
                       fillColor: Colors.white,
                     ),
-                    items: ['Soltero', 'Casado', 'Divorciado', 'Viudo']
+                    items: ['Soltero', 'Casado', 'Divorciado', 'Viudo', 'Soltera']
                         .map((label) => DropdownMenuItem(
                               child: Text(label),
                               value: label,
@@ -174,7 +226,7 @@ class _RegisterState extends State<Register> {
                         .toList(),
                     onChanged: (value) {
                       setState(() {
-                        _estadoCivil = value;
+                        _civilStatus = value;
                       });
                     },
                     validator: (value) {
@@ -192,7 +244,7 @@ class _RegisterState extends State<Register> {
                   padding: const EdgeInsets.all(2),
                   child: TextFormField(
                     decoration: const InputDecoration(
-                      labelText: 'Fecha de Nacimiento',
+                      labelText: 'Fecha de Nacimiento (DD/MM/AAAA)',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(10.0)),
                         borderSide: BorderSide.none,
@@ -200,30 +252,17 @@ class _RegisterState extends State<Register> {
                       filled: true,
                       fillColor: Colors.white,
                     ),
-                    readOnly: true,
-                    onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime(2100),
-                      );
-                      if (pickedDate != null) {
-                        setState(() {
-                          _fechaNacimiento = pickedDate;
-                        });
-                      }
-                    },
-                    controller: TextEditingController(
-                      text: _fechaNacimiento == null
-                          ? ''
-                          : '${_fechaNacimiento!.day}/${_fechaNacimiento!.month}/${_fechaNacimiento!.year}',
-                    ),
                     validator: (value) {
-                      if (_fechaNacimiento == null) {
-                        return 'Por favor seleccione su fecha de nacimiento';
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese su fecha de nacimiento';
                       }
+                      // Puedes agregar validaciones adicionales para la fecha de nacimiento si lo necesitas
                       return null;
+                    },
+                    onChanged: (value) {
+                      setState(() {
+                        _dateBirth = value;
+                      });
                     },
                     style: const TextStyle(color: Colors.black),
                   ),
@@ -233,7 +272,7 @@ class _RegisterState extends State<Register> {
                   decoration: gradientBorder,
                   padding: const EdgeInsets.all(2),
                   child: DropdownButtonFormField<String>(
-                    value: _genero,
+                    value: _genders,
                     decoration: const InputDecoration(
                       labelText: 'Género',
                       border: OutlineInputBorder(
@@ -251,7 +290,7 @@ class _RegisterState extends State<Register> {
                         .toList(),
                     onChanged: (value) {
                       setState(() {
-                        _genero = value;
+                        _genders = value;
                       });
                     },
                     validator: (value) {
@@ -267,15 +306,36 @@ class _RegisterState extends State<Register> {
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Procesando Datos',
-                            style: TextStyle(color: Colors.white),
+                      addUser(
+                        cedula: _cedulaController.text,
+                        name: _nameController.text,
+                        lastname: _lastnameController.text,
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                        civilStatus: _civilStatus!,
+                        dateBirth: _dateBirth!,
+                        genders: _genders!,
+                      ).then((_) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Usuario registrado exitosamente',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.black,
                           ),
-                          backgroundColor: Colors.black,
-                        ),
-                      );
+                        );
+                      }).catchError((error) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Error al registrar usuario: $error',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      });
                     }
                   },
                   style: ElevatedButton.styleFrom(

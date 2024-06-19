@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zap_talk/src/pages/firstPage.dart';
-import 'package:zap_talk/src/widget/navbar.dart';
+import 'package:zap_talk/services/post_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -10,10 +10,18 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final PostService _postService = PostService();
+  late Stream<List<Map<String, dynamic>>> _postsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _postsStream = _postService.streamPosts();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const Navbar(),
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Color.fromARGB(255, 255, 255, 255),
@@ -52,7 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const FirstPage()),
+                  MaterialPageRoute(builder: (context) => Firstpages()),
                 );
               },
             ),
@@ -100,23 +108,16 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'UsuarioEjemplo',
+                'EstefaniA Andrade',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               Text(
-                '@usuarioejemplo',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                '@estefaniaAndrade',
+                style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ],
           ),
           Spacer(),
-          ElevatedButton(
-            onPressed: () {},
-            child: Text('Seguir'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color.fromARGB(255, 90, 51, 197),
-            ),
-          ),
         ],
       ),
     );
@@ -156,7 +157,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Text(
-        'Aquí va una biografía interesante del usuario. Puede contener información personal, intereses, logros y más.',
+        '“A veces, cuando innovas, cometes errores. Lo mejor es admitirlos y centrarse en perfeccionar otras ideas”, Steve Jobs.',
         style: TextStyle(fontSize: 16),
         textAlign: TextAlign.center,
       ),
@@ -177,7 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           Container(
-            height: 400, // Adjust height as needed
+            height: 400,
             child: TabBarView(
               children: [
                 _buildGridPosts(),
@@ -192,62 +193,100 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildGridPosts() {
-    return GridView.builder(
-      padding: EdgeInsets.all(16.0),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 8.0,
-        crossAxisSpacing: 8.0,
-      ),
-      itemBuilder: (context, index) {
-        return Image.asset(
-          'images/descarga(2).jpeg',
-          fit: BoxFit.cover,
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _postsStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No hay publicaciones.'));
+        }
+        return GridView.builder(
+          padding: EdgeInsets.all(16.0),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 8.0,
+            crossAxisSpacing: 8.0,
+          ),
+          itemBuilder: (context, index) {
+            return Container(
+              color: Colors.grey[300],
+              child: Center(
+                child: Text(
+                  'Post ${index + 1}',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            );
+          },
+          itemCount: snapshot.data!.length,
         );
       },
-      itemCount: 30,
     );
   }
 
   Widget _buildListPosts() {
-    return ListView.builder(
-      padding: EdgeInsets.all(16.0),
-      itemBuilder: (context, index) {
-        return Card(
-          margin: EdgeInsets.only(bottom: 16.0),
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _postsStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No hay publicaciones.'));
+        }
+        return ListView.builder(
+          padding: EdgeInsets.all(16.0),
+          itemBuilder: (context, index) {
+            return Card(
+              margin: EdgeInsets.only(bottom: 16.0),
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      backgroundImage: AssetImage('images/descarga(3).jpeg'),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: AssetImage('images/descarga(3).jpeg'),
+                        ),
+                        SizedBox(width: 10.0),
+                        Text(
+                          'UsuarioEjemplo',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                          ),
+                        ),
+                        Spacer(),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            _deletePost(snapshot.data![index]['id']);
+                          },
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 10.0),
+                    SizedBox(height: 10.0),
                     Text(
-                      'UsuarioEjemplo',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
-                      ),
+                      snapshot.data![index]['text'] ?? '',
+                      style: TextStyle(fontSize: 16.0),
                     ),
                   ],
                 ),
-                SizedBox(height: 10.0),
-                Text(
-                  'Este es un ejemplo de una publicación en la vista de lista.',
-                  style: TextStyle(fontSize: 16.0),
-                ),
-                SizedBox(height: 10.0),
-                Image.asset('images/descarga(1).jpeg'),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
+          itemCount: snapshot.data!.length,
         );
       },
-      itemCount: 10,
     );
   }
 
@@ -255,5 +294,14 @@ class _ProfilePageState extends State<ProfilePage> {
     return Center(
       child: Text('No hay publicaciones guardadas.'),
     );
+  }
+
+  void _deletePost(String postId) {
+    _postService.deletePost(postId).then((_) {
+      // Aquí puedes agregar lógica adicional si es necesario, como actualizar el estado
+      print('Publicación eliminada correctamente');
+    }).catchError((error) {
+      print('Error al eliminar la publicación: $error');
+    });
   }
 }

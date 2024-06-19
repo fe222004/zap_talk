@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "471317356342",
+    "project_id": "back-zaptalk",
+    "storage_bucket": "back-zaptalk.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471317356342:android:c7e1a9be0dab2206e6dd97",
+        "android_client_info": {
+          "package_name": "com.miempresa.miapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCz9oJOA03cBJxLOnwThF3K1sPD2isybj0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
